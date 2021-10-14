@@ -39,9 +39,7 @@ func (tower Tower) IsValid() bool {
 		return true
 	}
 	prev := tower[0]
-	// fmt.Println(tower, tower[1:])
 	for _, current := range tower[1:] {
-		// fmt.Println(current, prev, current < prev)
 		if current > prev {
 			return false
 		}
