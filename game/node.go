@@ -23,51 +23,6 @@ func CreateNodes(values []*State, parent *Node) []*Node {
 	return nodes
 }
 
-// type FindFunc func(State) bool
-
-// func (root *Node) Find(comparator FindFunc) *Node {
-// 	queue := make([]*Node, 0)
-// 	queue = append(queue, root)
-// 	for len(queue) > 0 {
-// 		nextUp := queue[0]
-// 		queue = queue[1:]
-// 		if comparator(*nextUp.value) {
-// 			return nextUp
-// 		}
-// 		queue = append(queue, nextUp.children...)
-// 	}
-// 	return nil
-// }
-
-// func (node *Node) CreateChildren(value *State) *Node {
-// 	children := NewNode(value)
-// 	node.AddChildren(children)
-// 	return children
-// }
-
-// func (node *Node) AddChildren(children *Node) {
-// 	children.parent = node
-// 	node.children = append(node.children, children)
-// }
-
-// func (node *Node) Remove() {
-// 	for idx, sibling := range node.parent.children {
-// 		if sibling == node {
-// 			node.parent.children = append(
-// 				node.parent.children[:idx],
-// 				node.parent.children[idx+1:]...,
-// 			)
-// 		}
-// 	}
-
-// 	if len(node.children) != 0 {
-// 		for _, child := range node.children {
-// 			child.parent = nil
-// 		}
-// 		node.children = []*Node{}
-// 	}
-// }
-
 func (node *Node) String() string {
 	if node.heuris != 0 {
 		return fmt.Sprintf("{State: %v, Heuristic: %v}", node.value, node.heuris)
