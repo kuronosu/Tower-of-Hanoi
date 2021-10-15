@@ -56,10 +56,9 @@ func (tower Tower) Clone() *Tower {
 	return tmp
 }
 
-func (tower Tower) Sum() int {
-	tmp := 0
-	for _, v := range tower {
-		tmp += v
+func (tower Tower) GetDisc() int {
+	if len(tower) <= 0 {
+		return -1
 	}
-	return tmp
+	return tower[len(tower)-1]
 }

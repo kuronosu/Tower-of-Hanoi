@@ -16,11 +16,28 @@ type State struct {
 }
 
 func BlankState() *State {
-	return &State{Tower{}, Tower{}, Tower{}}
+	return NewState(Tower{}, Tower{}, Tower{})
 }
 
 func NewState(a Tower, b Tower, c Tower) *State {
 	return &State{a, b, c}
+}
+
+func ValidTowerName(name rune) bool {
+	return name == 'a' || name == 'b' || name == 'c'
+}
+
+func RemainingTower(from, to rune) (rune, error) {
+	var remaining rune
+	if !ValidTowerName(from) || !ValidTowerName(to) {
+		return remaining, fmt.Errorf("from '%c' or to '%c' is not a valid tower", from, to)
+	}
+	for _, v := range towers {
+		if !(v == from || v == to) {
+			remaining = v
+		}
+	}
+	return remaining, nil
 }
 
 func (state *State) Eq(other State) bool {
@@ -97,34 +114,8 @@ func (state *State) SetTower(name rune, value Tower) error {
 	return fmt.Errorf("%c is a invalid tower", name)
 }
 
-func ValidTowerName(name rune) bool {
-	return name == 'a' || name == 'b' || name == 'c'
-}
-
-func RemainingTower(from, to rune) (rune, error) {
-	var remaining rune
-	if !ValidTowerName(from) || !ValidTowerName(to) {
-		return remaining, fmt.Errorf("from '%c' or to '%c' is not a valid tower", from, to)
-	}
-	for _, v := range towers {
-		if !(v == from || v == to) {
-			remaining = v
-		}
-	}
-	return remaining, nil
-}
-
 func (state State) String() string {
-	return strings.ReplaceAll(fmt.Sprintf("State(%v, %v, %v, %v)", state.a, state.b, state.c, state.Weight()), "&", "")
-}
-
-func (state State) Weight() int {
-	p := 0
-	if !(len(state.a)%2 == 0 && len(state.b) > 0) {
-		p = len(state.b) + state.b.Sum()
-	}
-	value_a, value_c := state.a.Sum(), state.c.Sum()
-	return value_c - value_a + p
+	return strings.ReplaceAll(fmt.Sprintf("(%v, %v, %v)", state.a, state.b, state.c), "&", "")
 }
 
 func (state State) ApplyRules() []*State {
@@ -135,4 +126,62 @@ func (state State) ApplyRules() []*State {
 		}
 	}
 	return nextStates
+}
+
+func ExpectedDirection(disk, numberDisks int) int {
+	if disk%2 == 0 && numberDisks%2 == 0 {
+		return -1 // left
+	} else if disk%2 != 0 && numberDisks%2 == 0 {
+		return 1 // right
+	} else if disk%2 == 0 && numberDisks%2 != 0 {
+		return 1 // right
+	} else if disk%2 != 0 && numberDisks%2 != 0 {
+		return -1 // left
+	}
+	return 0
+}
+
+func Movement(start, result State) (int, [2]rune, int, error) { // disco, movimiento, peso, error
+	for _, movement := range Movements {
+		if state, err := start.Move(movement[0], movement[1]); err == nil {
+			if state.Eq(result) {
+				tower, _ := start.getTower(movement[0])
+				disk := tower.GetDisc()
+				weight, _ := MovementWeight(movement)
+				return disk, movement, weight, nil
+			}
+		}
+	}
+	return 0, [2]rune{}, 0, fmt.Errorf("no movement was found that of that result")
+}
+
+func MovementWeight(movement [2]rune) (int, error) {
+	s, err := towerPos(movement[0])
+	if err != nil {
+		return 0, err
+	}
+	e, err := towerPos(movement[1])
+	if err != nil {
+		return 0, err
+	}
+	w := e - s
+	if w == 2 {
+		w = -1
+	} else if w == -2 {
+		w = 1
+	}
+	return w, nil
+}
+
+func towerPos(pos rune) (int, error) {
+	switch pos {
+	case 'a':
+		return 0, nil
+	case 'b':
+		return 1, nil
+	case 'c':
+		return 2, nil
+	default:
+		return 0, fmt.Errorf("invalid movemnt")
+	}
 }

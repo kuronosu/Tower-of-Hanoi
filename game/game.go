@@ -2,12 +2,15 @@ package game
 
 import (
 	"fmt"
+	"math"
+	"os"
 	"sort"
 )
 
 type Game struct {
 	root   *Node
 	target State
+	Times  [][]int
 }
 
 func SetUpGame(n int) *Game {
@@ -17,11 +20,21 @@ func SetUpGame(n int) *Game {
 		initial.a.Push(i)
 		target.c.Push(i)
 	}
-	return NewGame(initial, target)
-}
-
-func NewGame(initial, target *State) *Game {
-	return &Game{NewNode(initial), *target}
+	times := [][]int{}
+	nn := float64(n)
+	for i := 0; i < n; i++ {
+		times = append(times, []int{})
+	}
+	for x := 1.0; x <= math.Pow(2, nn); x++ {
+		for y := 1.0; y <= nn; y++ {
+			if math.Pow(2, y)*(x)-math.Pow(2, y-1) < math.Pow(2, nn) {
+				times[int(y)-1] = append(times[int(y)-1], int(math.Pow(2.0, y)*x-math.Pow(2.0, y-1.0)))
+			}
+		}
+	}
+	root := NewNode(initial)
+	root.heuris = 1
+	return &Game{root, *target, times}
 }
 
 func (game *Game) String() string {
@@ -29,48 +42,23 @@ func (game *Game) String() string {
 }
 
 func (game *Game) Search() *Node {
-	var current *Node
-	open := []*Node{game.root}
-	close := []*Node{}
-	openLast := game.root
-	for len(open) > 0 && !game.target.Eq(*openLast.value) {
-		lastIndex := len(open) - 1
-		current, open = open[lastIndex], open[:lastIndex] // Pop
+	current := game.root
+	step := 1
+	n := len(game.target.c)
+	str := ""
+	for !game.target.Eq(*current.value) {
 		current.children = CreateNodes(current.value.ApplyRules(), current)
-		close = append(close, current)
-		for _, n := range current.children {
-			if !ContainState(close, *n.value) && !ContainState(open, *n.value) {
-				open = append(open, n)
-			}
-		}
-		sort.SliceStable(open, func(i, j int) bool {
-			return open[i].value.Weight() < open[j].value.Weight()
+		sort.SliceStable(current.children, func(i, j int) bool {
+			return current.children[i].HeuristicValue(n, step, game.Times) < current.children[j].HeuristicValue(n, step, game.Times)
 		})
-		openLast = open[len(open)-1]
-	}
-	if openLast.value.Eq(game.target) {
-		return openLast
-	}
-	return nil
-}
-
-func Eq(tower, other []*Node) bool {
-	if len(tower) != len(other) {
-		return false
-	}
-	for i, v := range tower {
-		if v != other[i] {
-			return false
+		str += fmt.Sprintf("%v => %v\n", current, current.children)
+		if len(current.children) > 0 {
+			current = current.children[0]
+		} else {
+			return nil
 		}
+		step += 1
 	}
-	return true
-}
-
-func ContainState(list []*Node, state State) bool {
-	for _, v := range list {
-		if v.value.Eq(state) {
-			return true
-		}
-	}
-	return false
+	os.WriteFile("generated_states.txt", []byte(str[:len(str)-1]), 0644)
+	return current
 }
